@@ -113,7 +113,7 @@ wire [31:0]imm_s = {{21{inst[31]}},inst[30:25],inst[11:7]};
 wire [31:0]imm_b = {{20{inst[31]}},inst[7],inst[30:25],inst[11:8],1'b0};
 wire [31:0]imm_u = {inst[31:12],{12{1'b0}}};
 wire [31:0]imm_j = {{12{inst[31]}},inst[19:12],inst[20],inst[30:25],inst[24:21],1'b0};
-wire imm_i_en    = riscv_JALR|riscv_LOAD|riscv_OPIMM;
+wire imm_i_en    = riscv_JALR|riscv_LOAD|riscv_OPIMM|riscv_SYSTEM;
 wire imm_s_en    = riscv_STORE;
 wire imm_b_en    = riscv_BRANCH;
 wire imm_u_en    = riscv_LUI|riscv_AUIPC;
@@ -126,7 +126,7 @@ assign dec_imm = (imm_i & {32{imm_i_en}})
 |(imm_u & {32{imm_u_en}})
 |(imm_j & {32{imm_j_en}});
 //立即数使能
-assign imm_en    = riscv_LUI|riscv_AUIPC|riscv_JALR|riscv_JAL|riscv_BRANCH|riscv_OPIMM|riscv_STORE|riscv_LOAD;
+assign imm_en    = riscv_LUI|riscv_AUIPC|riscv_JALR|riscv_JAL|riscv_BRANCH|riscv_OPIMM|riscv_STORE|riscv_LOAD|riscv_SYSTEM;
 assign inst      = (imm_en)?ir:32'h00000000;
 
 //寄存器使能
@@ -200,32 +200,32 @@ else begin
 			riscv_MISCMEM_reg <= 1'b0;
 		end 
 		else begin
-		dec_rs1_reg	 	<= dec_rs1;
-		dec_rs2_reg	 	<= dec_rs2 ;
-		dec_rd_reg	 	<= dec_rd;
-		dec_imm_reg 	<= dec_imm;
-		dec_rs1en_reg  <= dec_rs1en;
-		dec_rs2en_reg  <= dec_rs2en;
-		dec_rden_reg 	<= dec_rden;
-		dec_immen_reg	<= dec_immen;
-		dec_pcen_reg	<= dec_pcen;
-		funct3_reg 		<= funct3;
-		funct7_reg 		<= funct7;
+			dec_rs1_reg	 	<= dec_rs1;
+			dec_rs2_reg	 	<= dec_rs2 ;
+			dec_rd_reg	 	<= dec_rd;
+			dec_imm_reg 	<= dec_imm;
+			dec_rs1en_reg  <= dec_rs1en;
+			dec_rs2en_reg  <= dec_rs2en;
+			dec_rden_reg 	<= dec_rden;
+			dec_immen_reg	<= dec_immen;
+			dec_pcen_reg	<= dec_pcen;
+			funct3_reg 		<= funct3;
+			funct7_reg 		<= funct7;
 
-		riscv_LOAD_reg		<= riscv_LOAD;
-		riscv_OPIMM_reg 	<= riscv_OPIMM;
-		riscv_AUIPC_reg 	<= riscv_AUIPC;
-		riscv_STORE_reg	<= riscv_STORE;
-		riscv_OP_reg 		<= riscv_OP;
-		riscv_LUI_reg 		<= riscv_LUI;
-		riscv_BRANCH_reg 	<= riscv_BRANCH;
-		riscv_JALR_reg 	<= riscv_JALR;
-		riscv_JAL_reg 		<= riscv_JAL;
-		riscv_SYSTEM_reg 	<= riscv_SYSTEM;
-		riscv_MISCMEM_reg <= riscv_MISCMEM;
+			riscv_LOAD_reg		<= riscv_LOAD;
+			riscv_OPIMM_reg 	<= riscv_OPIMM;
+			riscv_AUIPC_reg 	<= riscv_AUIPC;
+			riscv_STORE_reg	<= riscv_STORE;
+			riscv_OP_reg 		<= riscv_OP;
+			riscv_LUI_reg 		<= riscv_LUI;
+			riscv_BRANCH_reg 	<= riscv_BRANCH;
+			riscv_JALR_reg 	<= riscv_JALR;
+			riscv_JAL_reg 		<= riscv_JAL;
+			riscv_SYSTEM_reg 	<= riscv_SYSTEM;
+			riscv_MISCMEM_reg <= riscv_MISCMEM;
 		end
 	end
-	pc_reg 				<= pc;
+	pc_reg <= pc;
 	end
 end
 

@@ -38,7 +38,7 @@ end
 else begin
 	if(pc_add)begin//如果正常取指，pc每次自加4
     if(load_pc_en)
-		  pc_register <= load_pc + 32'd4;
+		pc_register <= load_pc + 32'd4;
     else
       pc_register <= pc_register + 32'd4;
 	end

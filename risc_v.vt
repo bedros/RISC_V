@@ -33,8 +33,24 @@ reg eachvec;
 reg clk;
 reg reset;
 // wires                                               
-wire [31:0]  code_addr_bus;
-wire [31:0]  code_data_bus;
+wire [31:0]  	code_addr_bus;
+wire [31:0]  	code_data_bus;
+wire HSEL;
+wire DATA_HCLK;
+wire DATA_HRESETn;
+wire [31:0]DATA_HADDR;  //地址线
+wire [1:0]DATA_HTRANS;  //传输类型
+wire [31:0]DATA_HWDATA; //写数据线
+wire [31:0]DATA_HRDATA;  //读数据线
+wire DATA_HWRITE;       //读写信号线,高为写，低为读
+wire [2:0]DATA_HSIZE;   //传输大小,3'b000 Byte,3'b001 HalfWord,3'b010 Word
+wire [2:0]DATA_HBUST;   //bust传输方式，默认3'b000
+wire [1:0]DATA_HRESP;    //传输应答信号
+wire DATA_HREADY;        //传输完成信号
+
+
+
+
 reg code_data_already;
 //wire [31:0]  data_bus_rom;
 // assign statements (if any)                          
@@ -43,19 +59,43 @@ risc_v i1 (
 .code_addr_bus(code_addr_bus),
 .code_data_bus(code_data_bus),
 .code_data_already(code_data_already),
-.mem_addr_bus(mem_addr_bus),
-.mem_data_out_bus(mem_data_out_bus),
-.mem_data_in_bus(mem_data_in_bus),
+
+.DATA_HCLK(DATA_HCLK),
+.DATA_HRESETn(DATA_HRESETn),
+.DATA_HADDR(DATA_HADDR),  //地址线
+.DATA_HTRANS(DATA_HTRANS),  //传输类型
+.DATA_HWDATA(DATA_HWDATA), //写数据线
+.DATA_HRDATA(DATA_HRDATA),  //读数据线
+.DATA_HWRITE(DATA_HWRITE),       //读写信号线,高为写，低为读
+.DATA_HSIZE(DATA_HSIZE),   //传输大小,3'b000 Byte,3'b001 HalfWord,3'b010 Word
+.DATA_HBUST(DATA_HBUST),   //bust传输方式，默认3'b000
+.DATA_HRESP(DATA_HRESP),    //传输应答信号
+.DATA_HREADY(DATA_HREADY),        //传输完成信号
+
 .reset(reset),
 .clk(clk)
 );
 
+AHB_RAM ram(
+	.HCLK(DATA_HCLK),
+	.HRESETn(DATA_HRESETn),
+	.HSEL(HSEL),
+	.HADDR(DATA_HADDR[7:0]),  //地址线
+	.HTRANS(DATA_HTRANS),  //传输类型
+	.HWDATA(DATA_HWDATA), //写数据线
+	.HRDATA(DATA_HRDATA),  //读数据线
+	.HWRITE(DATA_HWRITE),       //读写信号线,高为写，低为读
+	.HSIZE(DATA_HSIZE),   //传输大小,3'b000 Byte,3'b001 HalfWord,3'b010 Word
+	.HBUST(DATA_HBUST),   //bust传输方式，默认3'b000
+	.HRESP(DATA_HRESP),    //传输应答信号
+	.HREADY(DATA_HREADY)        //传输完成信号
+);
 
+assign HSEL = (DATA_HADDR[31:8] == 32'hf00000)?1'b1:1'b0;
 
 rom_32bit _rom(
 	.address(code_addr_bus[9:2]),
 	.clock(clk),
-	//.q({code_data_bus[7:0],code_data_bus[15:8],code_data_bus[23:16],code_data_bus[31:24]}));
 	.q(code_data_bus));
 initial                                                
 begin                                                  
@@ -75,7 +115,7 @@ if(!reset)begin
 	code_data_already <= 1'b0;
 end 
 else begin
- code_data_already <= 1'b1;
+	code_data_already <= 1'b1;
 end         
 end					  
 endmodule

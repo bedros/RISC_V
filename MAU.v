@@ -25,7 +25,7 @@ HREADY	传输就绪信号，证明本次传输结束
 
 module MAU (
 //自定总线接口信号
-	input HCLK,
+	output HCLK,
 	input HRESETn,
 	output [31:0]HADDR,  //地址线
 	output [1:0]HTRANS,  //传输类型
@@ -48,9 +48,10 @@ module MAU (
 	output [31:0]data_out,
 	input [2:0]data_size,
 	input clk,
+	input reset,
 	output LOAD_READY,
 	output STORE_READY,
-	output wait_ready,
+	output reg wait_ready,
 	output load_addr_misaligned,	//读取地址未对齐
 	output store_addr_misaligned
 );
@@ -61,6 +62,7 @@ reg [2:0]data_size_buf;
 //定义两个标志，记录当前是否有读写正在进行
 reg read_flag;
 reg write_flag;
+wire [31:0]addr_out;
 
 wire mau_req;
 wire four_byte_misaligned;
@@ -70,14 +72,15 @@ wire misaligned;
 
 wire lbu_buf;
 wire lhu_buf;
-
+wire HADDR_outen;
 
 
 assign mau_req = riscv_LOAD|riscv_STORE;
-
+assign HTRANS = (mau_req == 1'b1)?`NONSEQ:`IDLE;
+assign HSIZE = {1'b0,data_size[1:0]};
+assign HCLK = clk;
 assign HBUST = 3'b000;//非突发传输
 assign HWRITE = (riscv_STORE == 1'b1)?1'b1:(riscv_LOAD == 1'b1)?1'b0:1'b0;
-
 //-------------------非对齐访问异常----------------------------------------------------\\
 assign four_byte_misaligned = (mau_req == 1'b1)?
 										(addr[1:0] != 2'b00)?1'b1:1'b0
@@ -142,24 +145,12 @@ assign load_data_in = 	({{24{byte_in[7]}},byte_in[7:0]} & {32{byte_buf}})|
 								({{24{1'b0}},byte_in[7:0]} & {32{lbu_buf}})|
 								({{16{1'b0}},half_word_in[15:0]} & {32{lhu_buf}});
 
-
-
-
-
-
-
-
-
-
-
-
-
 //-------------------store数据拼接----------------------------------------------------\\
 wire addr_one;
 wire addr_two;
 wire addr_three;
 wire addr_four;
-wire store_data_out;
+wire [31:0]store_data_out;
 wire [31:0]byte_out;
 wire [31:0]half_word_out;
 wire [31:0]word_out;
@@ -184,30 +175,68 @@ assign store_data_out = (byte_out & {32{byte}})|
 								(word_out & {32{word}});
 
 								
-								
-								
-								
-								
-								
+assign addr_out = addr;
+assign HADDR_outen = mau_req;
+assign HWDATA = (write_flag == 1'b1)?data_buf:32'h00000000;
+assign HADDR = (HADDR_outen == 1'b1)?addr_out:32'h00000000;
+
+
+//-------------------读写请求处理----------------------------------------------------\\
 always@(posedge clk) begin
-	read_flag <= riscv_LOAD;
+	if(read_flag == 1'b1)begin
+		if(HREADY == 1'b1) begin
+			if(riscv_STORE == 1'b1)begin
+				read_flag <= 1'b1;
+			end
+			else begin
+				read_flag <= 1'b0;
+			end
+		end
+		else begin
+		end
+	end
+	else begin
+		if(riscv_LOAD == 1'b1)begin
+				read_flag <= 1'b1;
+		end
+	end
 end
 
 
 always@(posedge clk) begin
-	write_flag <= riscv_STORE;
+	if(write_flag == 1'b1)begin
+		if(HREADY == 1'b1) begin
+			if(riscv_STORE == 1'b1)begin
+				write_flag <= 1'b1;
+			end
+			else begin
+				write_flag <= 1'b0;
+			end
+		end
+		else begin
+		end
+	end
+	else begin
+		if(riscv_STORE == 1'b1)begin
+				write_flag <= 1'b1;
+		end
+	end
 end
 
 
-always@(posedge HCLK,negedge HRESETn)begin
-	if (~HRESETn) begin
-		data_size_buf <= 3'b000;
+
+
+
+
+always@(posedge clk,negedge reset)begin
+	if (~reset) begin
+		data_size_buf <= 3'b111;
 	end
 
 end
 
-always@(posedge HCLK,negedge HRESETn)begin
-	if (~HRESETn) begin
+always@(posedge clk,negedge reset)begin
+	if (~reset) begin
 		addr_buf <= 32'h00000000;
 	end
 
@@ -215,18 +244,14 @@ always@(posedge HCLK,negedge HRESETn)begin
 
 end
 
-always@(posedge HCLK,negedge HRESETn)begin
-	if (~HRESETn) begin
+always@(posedge clk,negedge reset)begin
+	if (~reset) begin
 		data_buf <= 32'h00000000;
 	end
 	else begin
 	if(riscv_STORE)
-		data_buf <= data_in;
-
-
+		data_buf <= store_data_out;
 	end
-
-
 end
 
 endmodule
