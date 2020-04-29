@@ -45,7 +45,9 @@ module MAU (
 	input riscv_STORE,
 	input [31:0]addr,
 	input [31:0]data_in,
+	input [4:0]rd,
 	output [31:0]data_out,
+	output [4:0]rd_mau,
 	input [2:0]data_size,
 	input clk,
 	input reset,
@@ -56,9 +58,10 @@ module MAU (
 	output store_addr_misaligned
 );
 
-reg [31:0]addr_buf;
+reg [1:0]addr_buf;
 reg [31:0]data_buf;
 reg [2:0]data_size_buf;
+reg [4:0]rd_buf;
 //定义两个标志，记录当前是否有读写正在进行
 reg read_flag;
 reg write_flag;
@@ -144,6 +147,9 @@ assign load_data_in = 	({{24{byte_in[7]}},byte_in[7:0]} & {32{byte_buf}})|
 								(word_in & {32{word_buf}})|
 								({{24{1'b0}},byte_in[7:0]} & {32{lbu_buf}})|
 								({{16{1'b0}},half_word_in[15:0]} & {32{lhu_buf}});
+								
+								
+
 
 //-------------------store数据拼接----------------------------------------------------\\
 wire addr_one;
@@ -185,7 +191,7 @@ assign HADDR = (HADDR_outen == 1'b1)?addr_out:32'h00000000;
 always@(posedge clk) begin
 	if(read_flag == 1'b1)begin
 		if(HREADY == 1'b1) begin
-			if(riscv_STORE == 1'b1)begin
+			if(riscv_LOAD == 1'b1)begin
 				read_flag <= 1'b1;
 			end
 			else begin
@@ -224,25 +230,86 @@ always@(posedge clk) begin
 end
 
 
+//-------------------数据传入寄存器组----------------------------------------------------\\
 
-
+assign data_out = ((read_flag == 1'b1)&&(HREADY == 1'b1))?load_data_in:32'h00000000;
+assign rd_mau = ((read_flag == 1'b1)&&(HREADY == 1'b1))?rd_buf:5'b00000;
+assign LOAD_READY =((read_flag == 1'b1)&&(HREADY == 1'b1))?1'b1:1'b0;
 
 
 always@(posedge clk,negedge reset)begin
 	if (~reset) begin
 		data_size_buf <= 3'b111;
 	end
-
+	else begin
+		if(read_flag == 1'b1)begin
+			if(HREADY == 1'b1) begin
+				if(riscv_LOAD == 1'b1)begin
+					data_size_buf <= data_size;
+				end
+				else begin
+					data_size_buf <= 3'b111;
+				end
+			end
+		end
+		else begin
+			if(riscv_LOAD == 1'b1)begin
+				data_size_buf <= data_size;
+			end
+		end
+	end
 end
 
 always@(posedge clk,negedge reset)begin
 	if (~reset) begin
-		addr_buf <= 32'h00000000;
+		addr_buf <= 2'b00;
 	end
-
-
-
+	
+	else begin
+		if(read_flag == 1'b1)begin
+			if(HREADY == 1'b1) begin
+				if(riscv_LOAD == 1'b1)begin
+					addr_buf <= addr[1:0];
+				end
+				else begin
+					addr_buf <= 2'b00;
+				end
+			end
+		end
+		else begin
+			if(riscv_LOAD == 1'b1)begin
+				addr_buf <= addr[1:0];
+			end
+		end
+	end
 end
+
+
+always@(posedge clk,negedge reset)begin
+	if (~reset) begin
+		rd_buf <= 5'b00000;
+	end
+	else begin
+		if(read_flag == 1'b1)begin
+			if(HREADY == 1'b1) begin
+				if(riscv_LOAD == 1'b1)begin
+					rd_buf <= rd;
+				end
+				else begin
+					rd_buf <= 5'b00000;
+				end
+			end
+		end
+		else begin
+			if(riscv_LOAD == 1'b1)begin
+				rd_buf <= rd;
+			end
+		end
+	end
+end
+
+
+
 
 always@(posedge clk,negedge reset)begin
 	if (~reset) begin

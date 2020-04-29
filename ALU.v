@@ -30,7 +30,6 @@
 
 
 module ALU(
-input [31:0]data_fromMAU,//对于加载与输出指令对应的数据通道
 output [31:0]addr_toMAU,
 output [31:0]data_toMAU,
 

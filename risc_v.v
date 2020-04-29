@@ -37,7 +37,7 @@ wire IFU_load_pc_en;
 wire [31:0]ALU_addr_out;
 wire [31:0]pc_IFU_to_DECODE;
 
-wire [31:0]ALU_data_fromMAU;
+wire [31:0]MAU_data_toREG;
 wire [31:0]ALU_addr_toMAU;
 wire [31:0]ALU_data_toMAU;
 
@@ -71,6 +71,10 @@ wire [31:0]data_rd;
 wire [31:0]pc_DECODE_to_ALU;
 
 wire pipeline_flush;
+
+wire [4:0]rdmau;
+wire [31:0]data_mau_to_reg;
+wire rdmau_en;
 
 
 assign data_IFUtoBIU_en = 1'b1;
@@ -151,7 +155,6 @@ DECODE _decode(
 
 
 ALU _alu(
-	.data_fromMAU  ( ALU_data_fromMAU     ) ,
 	.addr_toMAU    ( ALU_addr_toMAU       ) ,
 	.data_toMAU    ( ALU_data_toMAU       ) ,
 	
@@ -190,18 +193,22 @@ ALU _alu(
 
 );
 
+
 REGFILE _regfile(
-	.data_in   ( data_rd    ) ,
-	.data_out1 ( data_rs1   ) ,
-	.data_out2 ( data_rs2   ) ,
-	.rd        ( index_rd   ) ,
-	.rs1       ( index_rs1  ) ,
-	.rs2       ( index_rs2  ) ,
-	.rd_en     ( enable_rd  ) ,
-	.rs1_en    ( enable_rs1 ) ,
-	.rs2_en    ( enable_rs2 ) ,
-	.clk       ( clk        ) ,
-	.reset     ( reset      )
+	.rdmau			(rdmau				),
+	.data_mau_in	(MAU_data_toREG	),
+	.rdmau_en		(rdmau_en			),
+	.data_in  		( data_rd    		),
+	.data_out1 		( data_rs1  		),
+	.data_out2 		( data_rs2   		),
+	.rd        		( index_rd   		),
+	.rs1       		( index_rs1  		),
+	.rs2       		( index_rs2  		),
+	.rd_en     		( enable_rd  		),
+	.rs1_en    		( enable_rs1 		),
+	.rs2_en    		( enable_rs2 		),
+	.clk       		( clk        		),
+	.reset     		( reset      		)
 );
 
 
@@ -228,13 +235,17 @@ MAU _mau(
 	.riscv_STORE(riscv_STORE),
 	.addr(ALU_addr_toMAU),
 	.data_in(ALU_data_toMAU),
-	.data_out(ALU_data_fromMAU),
+	.data_out(MAU_data_toREG),
 	.data_size(fun3),
 	.clk(clk),
 	.reset(reset),
-	.LOAD_READY(),
+	.LOAD_READY(rdmau_en),
 	.STORE_READY(),
-	.wait_ready()
+	.wait_ready(),
+	.rd(index_rd),
+	.rd_mau(rdmau),
+	.load_addr_misaligned(),	//读取地址未对齐
+	.store_addr_misaligned()
 
 );
 
