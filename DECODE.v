@@ -12,6 +12,7 @@
 
 
 module DECODE(
+  input run_en,
   input clk				  ,
   input reset			  ,
   input flush			  ,
@@ -147,9 +148,9 @@ assign dec_pcen = pc_en;
 
 always@(posedge clk,negedge reset)begin
 if(!reset)begin
-	dec_rs1_reg	 	<= 5'bzzzzz;
-	dec_rs2_reg	 	<= 5'bzzzzz ;
-	dec_rd_reg	 	<= 5'bzzzzz;
+	dec_rs1_reg	 	<= 5'b00000;
+	dec_rs2_reg	 	<= 5'b00000 ;
+	dec_rd_reg	 	<= 5'b00000;
 	dec_imm_reg 	<= 1'b0;
 	dec_rs1en_reg  <= 1'b0;
 	dec_rs2en_reg  <= 1'b0;
@@ -173,11 +174,12 @@ if(!reset)begin
 
 end 
 else begin
+if(run_en == 1'b1)begin
 	if(ir_already)begin
 		if(flush == 1'b1) begin
-			dec_rs1_reg	 	<= 5'bzzzzz;
-			dec_rs2_reg	 	<= 5'bzzzzz ;
-			dec_rd_reg	 	<= 5'bzzzzz;
+			dec_rs1_reg	 	<= 5'b00000;
+			dec_rs2_reg	 	<= 5'b00000 ;
+			dec_rd_reg	 	<= 5'b00000;
 			dec_imm_reg 	<= 1'b0;
 			dec_rs1en_reg  <= 1'b0;
 			dec_rs2en_reg  <= 1'b0;
@@ -227,6 +229,7 @@ else begin
 	end
 	pc_reg <= pc;
 	end
+end
 end
 
 endmodule

@@ -1,4 +1,5 @@
 module IFU(
+	input run_en,
 	output [31:0]addr_out,
 	input [31:0]data,
 	input [31:0]load_pc,
@@ -24,10 +25,12 @@ assign addr_out = ({32{IFU_addr_en}}&pc_register)|
 
 
 always@(posedge clk)begin
+if(run_en == 1'b1)begin
 	if(load_pc_en)
 		pc_to_DECODE <= load_pc;
     else
       pc_to_DECODE <= pc_register;
+end
 end		
 						  
 						  
@@ -36,11 +39,13 @@ if(~reset)begin//复位
 	pc_register <= 32'h00000000;
 end
 else begin
-	if(pc_add)begin//如果正常取指，pc每次自加4
-    if(load_pc_en)
-		pc_register <= load_pc + 32'd4;
-    else
-      pc_register <= pc_register + 32'd4;
+	if(run_en == 1'b1)begin
+		if(pc_add)begin//如果正常取指，pc每次自加4
+			if(load_pc_en)
+				pc_register <= load_pc + 32'd4;
+			else
+				pc_register <= pc_register + 32'd4;
+		end
 	end
 end
 end

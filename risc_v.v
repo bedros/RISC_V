@@ -76,6 +76,12 @@ wire [4:0]rdmau;
 wire [31:0]data_mau_to_reg;
 wire rdmau_en;
 
+wire MAU_data_conflict;
+wire LOAD_READY;
+wire IFU_run;
+wire DECODE_run;
+wire REGFILE_run;
+
 
 assign data_IFUtoBIU_en = 1'b1;
 assign data_ALUtoBIU_en = 1'b0;
@@ -104,6 +110,7 @@ assign data_ALUtoBIU_en = 1'b0;
 IFU _ifu(
 	//.addr_toBIU    ( addr_IFUtoBIU    ) ,
 	//.data          ( data_IFUtoBIU    ) ,
+	.run_en			(IFU_run				 ),
 	.addr_out      ( code_addr_bus    ) ,
 	.data          ( code_data_bus    ) ,
 	.load_pc       ( ALU_addr_out     ) ,
@@ -122,11 +129,12 @@ IFU _ifu(
 assign BIU_data_already = code_data_already;
 
 DECODE _decode(
-	.clk           ( clk              ) ,
-	.reset         ( reset            ) ,
-	.flush			(pipeline_flush    ) ,
-	.ir            ( ir               ) ,
-	.ir_already    ( IFU_ir_already   ) ,
+	.run_en			(DECODE_run				),
+	.clk           ( clk              	) ,
+	.reset         ( reset            	) ,
+	.flush			(pipeline_flush    	) ,
+	.ir            ( ir               	) ,
+	.ir_already    ( IFU_ir_already   	) ,
 	.pc				(pc_IFU_to_DECODE),
 	.dec_rs1_reg       ( index_rs1        ) ,//源寄存器1
 	.dec_rs2_reg       ( index_rs2        ) ,//源寄存器2
@@ -195,6 +203,7 @@ ALU _alu(
 
 
 REGFILE _regfile(
+	.run_en			(REGFILE_run		),
 	.rdmau			(rdmau				),
 	.data_mau_in	(MAU_data_toREG	),
 	.rdmau_en		(rdmau_en			),
@@ -239,9 +248,15 @@ MAU _mau(
 	.data_size(fun3),
 	.clk(clk),
 	.reset(reset),
+	
+	.rs1_en(enable_rs1),
+	.rs2_en(enable_rs2),
+	.dec_rs1(index_rs1)  ,
+	.dec_rs2(index_rs2)  ,
+	
 	.LOAD_READY(rdmau_en),
 	.STORE_READY(),
-	.wait_ready(),
+	.MAU_data_conflict		(MAU_data_conflict),
 	.rd(index_rd),
 	.rd_mau(rdmau),
 	.load_addr_misaligned(),	//读取地址未对齐
@@ -250,7 +265,14 @@ MAU _mau(
 );
 
 
-
+RCU _rcu( //run control unit
+	.MAU_data_conflict		(MAU_data_conflict),
+	.clk							(clk),
+	.reset						(reset),
+	.IFU_run						(IFU_run),
+	.DECODE_run					(DECODE_run),
+	.REGFILE_run				(REGFILE_run)
+);
 
 
 

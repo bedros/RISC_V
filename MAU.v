@@ -51,9 +51,15 @@ module MAU (
 	input [2:0]data_size,
 	input clk,
 	input reset,
+	
+	input rs1_en,
+	input rs2_en,
+	input [4:0]dec_rs1  ,
+	input [4:0]dec_rs2  ,
+	
 	output LOAD_READY,
 	output STORE_READY,
-	output reg wait_ready,
+	output reg MAU_data_conflict,
 	output load_addr_misaligned,	//读取地址未对齐
 	output store_addr_misaligned
 );
@@ -191,7 +197,7 @@ assign HADDR = (HADDR_outen == 1'b1)?addr_out:32'h00000000;
 always@(posedge clk) begin
 	if(read_flag == 1'b1)begin
 		if(HREADY == 1'b1) begin
-			if(riscv_LOAD == 1'b1)begin
+			if((riscv_LOAD == 1'b1)&&(MAU_data_conflict == 1'b0))begin
 				read_flag <= 1'b1;
 			end
 			else begin
@@ -320,5 +326,27 @@ always@(posedge clk,negedge reset)begin
 		data_buf <= store_data_out;
 	end
 end
+
+//-------------------数据冲突等待----------------------------------------------------\\
+wire [4:0]rs1;
+wire [4:0]rs2;
+
+assign rs1 = (rs1_en == 1'b1)?dec_rs1:5'b00000;
+assign rs2 = (rs2_en == 1'b1)?dec_rs2:5'b00000;
+
+
+always@(*)begin
+	if(read_flag == 1'b1)begin
+		if((rd_buf == rs1)||(rd_buf == rs2))begin
+				MAU_data_conflict = 1'b1;
+		end
+		else
+				MAU_data_conflict = 1'b0;
+	end
+	else
+				MAU_data_conflict = 1'b0;
+end
+
+
 
 endmodule
