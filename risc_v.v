@@ -123,7 +123,8 @@ IFU _ifu(
 	.reset         ( reset            ) ,
 	.pc_add        ( IFU_pc_add       ) ,
 	.load_pc_en    ( IFU_load_pc_en   ) ,
-	.ir            ( ir               )
+	.ir            ( ir               )	,
+	.MAU_data_conflict		(MAU_data_conflict)
 );
 
 assign BIU_data_already = code_data_already;
@@ -197,7 +198,8 @@ ALU _alu(
 	.pc_add        ( IFU_pc_add       ) ,
 	.flush			(pipeline_flush    ) ,
 	.addrpc_en     ( addr_IFUtoBIU_en ) ,
-	.addralu_en    ( addr_ALUtoBIU_en )
+	.addralu_en    ( addr_ALUtoBIU_en ) ,
+	.MAU_data_conflict		(MAU_data_conflict)
 
 );
 

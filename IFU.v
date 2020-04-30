@@ -12,16 +12,17 @@ module IFU(
 	input reset,
 	input pc_add,
 	input load_pc_en,
-	output [31:0]ir
+	output [31:0]ir,
+	input MAU_data_conflict
 );
 
 reg [31:0]pc_register;
 
 assign ir_already = data_already;
 assign ir = (data_already == 1'b1)?data:32'h00000000;
-assign addr_out = ({32{IFU_addr_en}}&pc_register)|
-						  ({32{ALU_addr_en}}&load_pc);
-		
+assign addr_out = (MAU_data_conflict == 1'b1)?pc_to_DECODE:
+							(({32{IFU_addr_en}}&pc_register)|
+						   ({32{ALU_addr_en}}&load_pc));
 
 
 always@(posedge clk)begin

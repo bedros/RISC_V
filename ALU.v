@@ -66,7 +66,9 @@ output pc_load,
 output pc_add,
 output flush,//流水线冲刷
 output addrpc_en,
-output addralu_en
+output addralu_en,
+
+input MAU_data_conflict
 );
 
 //定义常规数据运算
@@ -226,6 +228,8 @@ assign alu_outen = alu_op_en|riscv_AUIPC;
 //另一路为地址计算输出，主要进行跳转指令和访问寄存器指令
 assign pc_toREG = ({32{pc_toREG_en}}&(pc + 32'd4));
 assign pc_toREG_en = riscv_JAL|riscv_JALR;
+
+
 assign addr_fromALU = {32{addr_fromALU_en}}&{alu_add[31:1],(riscv_JALR==1'b0)?alu_add[0]:1'b0};
 assign addr_fromALU_en = pc_load;
 
