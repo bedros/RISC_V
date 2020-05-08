@@ -32,12 +32,11 @@ reg eachvec;
 // test vector input registers
 reg clk;
 reg reset;
-// wires                                               
-wire [31:0]  	code_addr_bus;
-wire [31:0]  	code_data_bus;
-wire HSEL;
-wire DATA_HCLK;
-wire DATA_HRESETn;
+// wires      
+
+wire HCLK;
+wire HRESETn;
+
 wire [31:0]DATA_HADDR;  //地址线
 wire [1:0]DATA_HTRANS;  //传输类型
 wire [31:0]DATA_HWDATA; //写数据线
@@ -50,18 +49,60 @@ wire DATA_HREADY;        //传输完成信号
 
 
 
+wire [31:0]CODE_HADDR;  //地址线
+wire [1:0]CODE_HTRANS;  //传输类型
+wire [31:0]CODE_HWDATA; //写数据线
+wire [31:0]CODE_HRDATA;  //读数据线
+wire CODE_HWRITE;       //读写信号线,高为写，低为读
+wire [2:0]CODE_HSIZE;   //传输大小,3'b000 Byte,3'b001 HalfWord,3'b010 Word
+wire [2:0]CODE_HBUST;   //bust传输方式，默认3'b000
+wire [1:0]CODE_HRESP;    //传输应答信号
+wire CODE_HREADY;        //传输完成信号
 
-reg code_data_already;
-//wire [31:0]  data_bus_rom;
-// assign statements (if any)                          
+
+wire ROM_HSEL;
+wire RAM_HSEL;
+wire ROM_HCLK;
+wire RAM_HCLK;
+wire ROM_HRESETn;
+wire RAM_HRESETn;
+
+wire [31:0]RAM_HADDR;  //地址线
+wire [1:0]RAM_HTRANS;  //传输类型
+wire [31:0]RAM_HWDATA; //写数据线
+wire [31:0]RAM_HRDATA;  //读数据线
+wire RAM_HWRITE;       //读写信号线,高为写，低为读
+wire [2:0]RAM_HSIZE;   //传输大小,3'b000 Byte,3'b001 HalfWord,3'b010 Word
+wire [2:0]RAM_HBUST;   //bust传输方式，默认3'b000
+wire [1:0]RAM_HRESP;    //传输应答信号
+wire RAM_HREADY;        //传输完成信号
+
+wire [31:0]ROM_HADDR;  //地址线
+wire [1:0]ROM_HTRANS;  //传输类型
+wire [31:0]ROM_HWDATA; //写数据线
+wire [31:0]ROM_HRDATA;  //读数据线
+wire ROM_HWRITE;       //读写信号线,高为写，低为读
+wire [2:0]ROM_HSIZE;   //传输大小,3'b000 Byte,3'b001 HalfWord,3'b010 Word
+wire [2:0]ROM_HBUST;   //bust传输方式，默认3'b000
+wire [1:0]ROM_HRESP;    //传输应答信号
+wire ROM_HREADY;        //传输完成信号
+                    
 risc_v i1 (
 // port map - connection between master ports and signals/registers   
-.code_addr_bus(code_addr_bus),
-.code_data_bus(code_data_bus),
-.code_data_already(code_data_already),
+.CODE_HADDR(CODE_HADDR),  //地址线
+.CODE_HTRANS(CODE_HTRANS),  //传输类型
+.CODE_HWDATA(CODE_HWDATA), //写数据线
+.CODE_HRDATA(CODE_HRDATA),  //读数据线
+.CODE_HWRITE(CODE_HWRITE),       //读写信号线,高为写，低为读
+.CODE_HSIZE(CODE_HSIZE),   //传输大小,3'b000 Byte,3'b001 HalfWord,3'b010 Word
+.CODE_HBUST(CODE_HBUST),   //bust传输方式，默认3'b000
+.CODE_HRESP(CODE_HRESP),    //传输应答信号
+.CODE_HREADY(CODE_HREADY),        //传输完成信号
 
-.DATA_HCLK(DATA_HCLK),
-.DATA_HRESETn(DATA_HRESETn),
+.ACCESS_data_conflict(ACCESS_data_conflict),
+.HCLK(HCLK),
+.HRESETn(HRESETn),
+
 .DATA_HADDR(DATA_HADDR),  //地址线
 .DATA_HTRANS(DATA_HTRANS),  //传输类型
 .DATA_HWDATA(DATA_HWDATA), //写数据线
@@ -77,26 +118,93 @@ risc_v i1 (
 );
 
 AHB_RAM ram(
-	.HCLK(DATA_HCLK),
-	.HRESETn(DATA_HRESETn),
-	.HSEL(HSEL),
-	.HADDR(DATA_HADDR[7:0]),  //地址线
-	.HTRANS(DATA_HTRANS),  //传输类型
-	.HWDATA(DATA_HWDATA), //写数据线
-	.HRDATA(DATA_HRDATA),  //读数据线
-	.HWRITE(DATA_HWRITE),       //读写信号线,高为写，低为读
-	.HSIZE(DATA_HSIZE),   //传输大小,3'b000 Byte,3'b001 HalfWord,3'b010 Word
-	.HBUST(DATA_HBUST),   //bust传输方式，默认3'b000
-	.HRESP(DATA_HRESP),    //传输应答信号
-	.HREADY(DATA_HREADY)        //传输完成信号
+	.HCLK(RAM_HCLK),
+	.HRESETn(RAM_HRESETn),
+	.HSEL(RAM_HSEL),
+	.HADDR(RAM_HADDR),  //地址线
+	.HTRANS(RAM_HTRANS),  //传输类型
+	.HWDATA(RAM_HWDATA), //写数据线
+	.HRDATA(RAM_HRDATA),  //读数据线
+	.HWRITE(RAM_HWRITE),       //读写信号线,高为写，低为读
+	.HSIZE(RAM_HSIZE),   //传输大小,3'b000 Byte,3'b001 HalfWord,3'b010 Word
+	.HBUST(RAM_HBUST),   //bust传输方式，默认3'b000
+	.HRESP(RAM_HRESP),    //传输应答信号
+	.HREADY(RAM_HREADY)        //传输完成信号
 );
 
-assign HSEL = (DATA_HADDR[31:8] == 32'hf00000)?1'b1:1'b0;
 
-rom_32bit _rom(
-	.address(code_addr_bus[9:2]),
-	.clock(clk),
-	.q(code_data_bus));
+AHB_ROM rom(
+	.HCLK(ROM_HCLK),
+	.HRESETn(ROM_HRESETn),
+	.HSEL(ROM_HSEL),
+	.HADDR(ROM_HADDR),  //地址线
+	.HTRANS(ROM_HTRANS),  //传输类型
+	.HWDATA(ROM_HWDATA), //写数据线
+	.HRDATA(ROM_HRDATA),  //读数据线
+	.HWRITE(ROM_HWRITE),       //读写信号线,高为写，低为读
+	.HSIZE(ROM_HSIZE),   //传输大小,3'b000 Byte,3'b001 HalfWord,3'b010 Word
+	.HBUST(ROM_HBUST),   //bust传输方式，默认3'b000
+	.HRESP(ROM_HRESP),    //传输应答信号
+	.HREADY(ROM_HREADY)        //传输完成信号
+);
+
+AHB_ARB arb(
+
+.CODE_HADDR(CODE_HADDR),  //地址线
+.CODE_HTRANS(CODE_HTRANS),  //传输类型
+.CODE_HWDATA(CODE_HWDATA), //写数据线
+.CODE_HRDATA(CODE_HRDATA),  //读数据线
+.CODE_HWRITE(CODE_HWRITE),       //读写信号线,高为写，低为读
+.CODE_HSIZE(CODE_HSIZE),   //传输大小,3'b000 Byte,3'b001 HalfWord,3'b010 Word
+.CODE_HBUST(CODE_HBUST),   //bust传输方式，默认3'b000
+.CODE_HRESP(CODE_HRESP),    //传输应答信号
+.CODE_HREADY(CODE_HREADY),        //传输完成信号
+
+.HCLK(HCLK),
+.HRESETn(HRESETn),
+.ACCESS_data_conflict(ACCESS_data_conflict),
+
+.DATA_HADDR(DATA_HADDR),  //地址线
+.DATA_HTRANS(DATA_HTRANS),  //传输类型
+.DATA_HWDATA(DATA_HWDATA), //写数据线
+.DATA_HRDATA(DATA_HRDATA),  //读数据线
+.DATA_HWRITE(DATA_HWRITE),       //读写信号线,高为写，低为读
+.DATA_HSIZE(DATA_HSIZE),   //传输大小,3'b000 Byte,3'b001 HalfWord,3'b010 Word
+.DATA_HBUST(DATA_HBUST),   //bust传输方式，默认3'b000
+.DATA_HRESP(DATA_HRESP),    //传输应答信号
+.DATA_HREADY(DATA_HREADY),        //传输完成信号
+
+
+//slave
+.HCLK_1(RAM_HCLK),
+.HRESETn_1(RAM_HRESETn),
+.HSEL_1(RAM_HSEL),
+.HADDR_1(RAM_HADDR),  //地址线
+.HTRANS_1(RAM_HTRANS),  //传输类型
+.HWDATA_1(RAM_HWDATA), //写数据线
+.HRDATA_1(RAM_HRDATA),  //读数据线
+.HWRITE_1(RAM_HWRITE),       //读写信号线,高为写，低为读
+.HSIZE_1(RAM_HSIZE),   //传输大小,3'b000 Byte,3'b001 HalfWord,3'b010 Word
+.HBUST_1(RAM_HBUST),   //bust传输方式，默认3'b000
+.HRESP_1(RAM_HRESP),    //传输应答信号
+.HREADY_1(RAM_HREADY),        //传输完成信号
+
+.HCLK_2(ROM_HCLK),
+.HRESETn_2(ROM_HRESETn),
+.HSEL_2(ROM_HSEL),
+.HADDR_2(ROM_HADDR),  //地址线
+.HTRANS_2(ROM_HTRANS),  //传输类型
+.HWDATA_2(ROM_HWDATA), //写数据线
+.HRDATA_2(ROM_HRDATA),  //读数据线
+.HWRITE_2(ROM_HWRITE),       //读写信号线,高为写，低为读
+.HSIZE_2(ROM_HSIZE),   //传输大小,3'b000 Byte,3'b001 HalfWord,3'b010 Word
+.HBUST_2(ROM_HBUST),   //bust传输方式，默认3'b000
+.HRESP_2(ROM_HRESP),    //传输应答信号
+.HREADY_2(ROM_HREADY)        //传输完成信号
+);
+
+
+
 initial                                                
 begin                                                  
 clk = 1'b1;
@@ -108,15 +216,11 @@ reset = 1'b1;
 #10000;
 $stop();
 end                                                    
-always  #10 clk = ~clk;
+	
 
-always @(posedge clk,negedge reset)  begin
-if(!reset)begin
-	code_data_already <= 1'b0;
-end 
-else begin
-	code_data_already <= 1'b1;
-end         
-end					  
+always #10 begin
+clk = ~clk;
+
+end	
 endmodule
 

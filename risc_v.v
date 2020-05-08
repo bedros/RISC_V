@@ -1,12 +1,10 @@
 module risc_v(
-output [31:0]code_addr_bus,
-input [31:0]code_data_bus,
-input code_data_already,
 
 input reset,
+input ACCESS_data_conflict,
+output HRESETn,
+output HCLK,
 
-output DATA_HCLK,
-output DATA_HRESETn,
 output [31:0]DATA_HADDR,  //地址线
 output [1:0]DATA_HTRANS,  //传输类型
 output [31:0]DATA_HWDATA, //写数据线
@@ -16,6 +14,16 @@ output [2:0]DATA_HSIZE,   //传输大小,3'b000 Byte,3'b001 HalfWord,3'b010 Word
 output [2:0]DATA_HBUST,   //bust传输方式，默认3'b000
 input [1:0]DATA_HRESP,    //传输应答信号
 input DATA_HREADY,        //传输完成信号
+
+output [31:0]CODE_HADDR,  //地址线
+output [1:0]CODE_HTRANS,  //传输类型
+output [31:0]CODE_HWDATA, //写数据线
+input [31:0]CODE_HRDATA,  //读数据线
+output CODE_HWRITE,       //读写信号线,高为写，低为读
+output [2:0]CODE_HSIZE,   //传输大小,3'b000 Byte,3'b001 HalfWord,3'b010 Word
+output [2:0]CODE_HBUST,   //bust传输方式，默认3'b000
+input [1:0]CODE_HRESP,    //传输应答信号
+input CODE_HREADY,        //传输完成信号
 
 input clk
 );
@@ -86,7 +94,7 @@ wire REGFILE_run;
 assign data_IFUtoBIU_en = 1'b1;
 assign data_ALUtoBIU_en = 1'b0;
 
-
+assign HCLK =clk;
 
 
 
@@ -110,12 +118,26 @@ assign data_ALUtoBIU_en = 1'b0;
 IFU _ifu(
 	//.addr_toBIU    ( addr_IFUtoBIU    ) ,
 	//.data          ( data_IFUtoBIU    ) ,
+	
+	.HCLK(CODE_HCLK),
+	.HRESETn(CODE_HRESETn),
+	.HADDR(CODE_HADDR),  //地址线
+	.HTRANS(CODE_HTRANS),  //传输状态，考虑是否使用
+	.HWDATA(CODE_HWDATA), //写数据线
+	.HRDATA(CODE_HRDATA),  //读数据线
+	.HWRITE(CODE_HWRITE),       //读写信号线,高为写，低为读
+	.HSIZE(CODE_HSIZE),   //传输大小,3'b000 Byte,3'b001 HalfWord,3'b010 Word
+	.HBUST(CODE_HBUST),   //bust传输方式，默认3'b000
+	.HBUSREQ(),      //总线请求信号
+	.HLOCK(),        //总线锁定信号
+	.HRESP(CODE_HRESP),    //传输应答信号
+	.HGRANT(),        //总线应答信号
+	.HREADY(CODE_HREADY),        //传输完成信号
+	
+	
 	.run_en			(IFU_run				 ),
-	.addr_out      ( code_addr_bus    ) ,
-	.data          ( code_data_bus    ) ,
 	.load_pc       ( ALU_addr_out     ) ,
-	.pc_to_DECODE      ( pc_IFU_to_DECODE      ) ,
-	.data_already  ( BIU_data_already ) ,
+	.pc_to_DECODE  ( pc_IFU_to_DECODE      ) ,
 	.ir_already    ( IFU_ir_already   ) ,
 	.IFU_addr_en   ( addr_IFUtoBIU_en ) ,
 	.ALU_addr_en   ( addr_ALUtoBIU_en ) ,
@@ -124,10 +146,9 @@ IFU _ifu(
 	.pc_add        ( IFU_pc_add       ) ,
 	.load_pc_en    ( IFU_load_pc_en   ) ,
 	.ir            ( ir               )	,
-	.MAU_data_conflict		(MAU_data_conflict)
+	.data_conflict		(data_conflict)
 );
 
-assign BIU_data_already = code_data_already;
 
 DECODE _decode(
 	.run_en			(DECODE_run				),
@@ -159,7 +180,8 @@ DECODE _decode(
   .riscv_SYSTEM_reg  ( riscv_SYSTEM     ) ,
   .riscv_MISCMEM_reg ( riscv_MISCMEM    ) ,
   .dec_pcen_reg     	( dec_pcen),
-  .pc_reg				(pc_DECODE_to_ALU)
+  .pc_reg				(pc_DECODE_to_ALU),
+  .ACCESS_data_conflict   (ACCESS_data_conflict)
 );
 
 
@@ -269,6 +291,8 @@ MAU _mau(
 
 RCU _rcu( //run control unit
 	.MAU_data_conflict		(MAU_data_conflict),
+	.ACCESS_data_conflict   (ACCESS_data_conflict),
+	.data_conflict				(data_conflict),
 	.clk							(clk),
 	.reset						(reset),
 	.IFU_run						(IFU_run),

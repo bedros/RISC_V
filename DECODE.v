@@ -42,8 +42,9 @@ module DECODE(
   output reg riscv_JAL_reg     ,
   output reg riscv_SYSTEM_reg  ,
   output reg riscv_MISCMEM_reg ,
-  output reg [31:0]pc_reg		 
+  output reg [31:0]pc_reg	,	 
 
+  input ACCESS_data_conflict
 );
 
 wire [6:0]opcode;
@@ -174,6 +175,23 @@ if(!reset)begin
 
 end 
 else begin
+if(ACCESS_data_conflict == 1'b1)begin
+riscv_LOAD_reg		<= 1'b0;
+riscv_STORE_reg	<= 1'b0;
+dec_rs1_reg	 	<= 5'b00000;
+dec_rs2_reg	 	<= 5'b00000 ;
+dec_rd_reg	 	<= 5'b00000;
+dec_imm_reg 	<= 1'b0;
+dec_rs1en_reg  <= 1'b0;
+dec_rs2en_reg  <= 1'b0;
+dec_rden_reg 	<= 1'b0;
+dec_immen_reg	<= 1'b0;
+dec_pcen_reg	<= 1'b0;
+funct3_reg 		<= 3'b000;
+funct7_reg 		<= 7'b0000000;
+
+end
+else begin
 if(run_en == 1'b1)begin
 	if(ir_already)begin
 		if(flush == 1'b1) begin
@@ -229,6 +247,7 @@ if(run_en == 1'b1)begin
 	end
 	pc_reg <= pc;
 	end
+end
 end
 end
 

@@ -2,7 +2,7 @@ module AHB_RAM(
 	input HCLK,
 	input HRESETn,
 	input HSEL,
-	input [7:0]HADDR,  //地址线
+	input [31:0]HADDR,  //地址线
 	input [1:0]HTRANS,  //传输类型
 	input [31:0]HWDATA, //写数据线
 	output [31:0]HRDATA,  //读数据线
@@ -33,10 +33,10 @@ reg write_flag;
 reg read_flag;
 
 assign NONSEQ = (HTRANS == 2'b10)?1'b1:1'b0;
-assign RAM_REQ = NONSEQ|HSEL;
+assign RAM_REQ = NONSEQ&HSEL;
 assign HREADY = ready;
 
-assign address = (write_flag == 1'b1)?HADDR_buf:HADDR;
+assign address = (write_flag == 1'b1)?HADDR_buf:HADDR[7:0];
 assign ram_byteena = (write_flag == 1'b1)?byteena_buf:byteena;
 assign ram_wr = (write_flag == 1'b1)?1'b1:1'b0;
 
@@ -76,6 +76,9 @@ always@(posedge clock)begin
 		if(RAM_REQ == 1'b1)begin
 			ready <= 1'b1;
 		end
+		else begin
+			ready <= 1'b0;
+		end
 	end
 end
 
@@ -101,7 +104,7 @@ end
 
 always@(posedge clock)begin
 	if(wren == 1'b1)begin
-		HADDR_buf <= HADDR;
+		HADDR_buf <= HADDR[7:0];
 		byteena_buf <= byteena;
 		write_flag <= 1'b1;
 	end

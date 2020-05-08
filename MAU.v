@@ -83,9 +83,13 @@ wire lbu_buf;
 wire lhu_buf;
 wire HADDR_outen;
 
+wire req_flag;
 
 assign mau_req = riscv_LOAD|riscv_STORE;
+assign req_flag = write_flag|read_flag;
 assign HTRANS = (mau_req == 1'b1)?`NONSEQ:`IDLE;
+
+
 assign HSIZE = {1'b0,data_size[1:0]};
 assign HCLK = clk;
 assign HBUST = 3'b000;//非突发传输
