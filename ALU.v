@@ -163,24 +163,20 @@ assign alu_slt = (($signed(alu_op1)) < ($signed(alu_op2)))?32'h00000001:32'h0000
 assign alu_sltu = (alu_op1 < alu_op2)?32'h00000001:32'h00000000;
 assign alu_sub = alu_op1 - alu_op2;
 
-assign alu_out = (alu_outen)?(({32{alu_adden}}&alu_add)|
-										({32{alu_suben}}&alu_sub)|
-										({32{alu_anden}}&alu_and)|
-										({32{alu_xoren}}&alu_xor)|
-										({32{alu_sllen}}&alu_sll)|
-										({32{alu_srlen}}&alu_srl)|
-										({32{alu_sraen}}&alu_sra)|
-										({32{alu_oren}}&alu_or)|
-										({32{alu_slten}}&alu_slt)|
-										({32{alu_sltuen}}&alu_sltu)):32'h00000000;
+assign alu_out = (alu_outen)?	(({32{alu_adden}}&alu_add)|
+								({32{alu_suben}}&alu_sub)|
+								({32{alu_anden}}&alu_and)|
+								({32{alu_xoren}}&alu_xor)|
+								({32{alu_sllen}}&alu_sll)|
+								({32{alu_srlen}}&alu_srl)|
+								({32{alu_sraen}}&alu_sra)|
+								({32{alu_oren}}&alu_or)|
+								({32{alu_slten}}&alu_slt)|
+								({32{alu_sltuen}}&alu_sltu)):32'h00000000;
 
 //译码对应的操作类型
 assign alu_adden = ((riscv_OP == 1'b1)&&(funct3 == `ADD_funct3)&&(funct7 == `ADD_funct7))||
-                   ((riscv_OPIMM == 1'b1)&&(funct3 == `ADD_funct3))||
-                   (dec_pcen == 1'b1)||
-                   (riscv_JALR == 1'b1)||
-						 (riscv_LOAD == 1'b1)||
-						 (riscv_STORE == 1'b1)?1'b1:1'b0;//如果需要pc的值进行计算，必定为加计算
+					((riscv_OPIMM == 1'b1)&&(funct3 == `ADD_funct3))?1'b1:1'b0;
 
 
 assign alu_xoren = ((riscv_OP == 1'b1)&&(funct3 == `XOR_funct3)&&(funct7 == `XOR_funct7))||
@@ -209,23 +205,22 @@ assign alu_sraen = ((alu_op_en == 1'b1)&&(funct3 == `SRA_funct3)&&(funct7 == `SR
 
 
 assign alu_addin1 =(pc&{32{dec_pcen}})|
-                (data_in1&{32{dec_rs1en}}&{32{~dec_pcen}});
-assign alu_addin2 = (imm&{32{dec_immen}})|
-                (data_in2&{32{dec_rs2en}}&{32{~dec_immen}});
-assign alu_op1 = (data_in1&{32{dec_rs1en}});
-assign alu_op2 = (data_in2&{32{dec_rs2en}});
+					(data_in1&{32{dec_rs1en}}&{32{~dec_pcen}});
+assign alu_addin2 =(imm&{32{dec_immen}})|
+					(data_in2&{32{dec_rs2en}}&{32{~dec_immen}});
+assign alu_op1 = 	(data_in1&{32{dec_rs1en}});
+assign alu_op2 = 	((imm&{32{dec_immen}})&{32{~riscv_BRANCH}})|
+					((data_in2&{32{dec_rs2en}})&{32{riscv_BRANCH}})|
+					((data_in2&{32{dec_rs2en}})&{32{~dec_immen}});
 
 
 assign data_toReg = ({32{alu_outen}}&alu_out)|
                     ({32{riscv_LUI}}&imm)|
                     ({32{pc_toREG_en}}&pc_toREG);
 
-//待修改debug用
+
 assign alu_outen = alu_op_en|riscv_AUIPC;
 
-//alu一共有两路输出
-//一路为寄存器输出，将运算结果输入给寄存器
-//另一路为地址计算输出，主要进行跳转指令和访问寄存器指令
 assign pc_toREG = ({32{pc_toREG_en}}&(pc + 32'd4));
 assign pc_toREG_en = riscv_JAL|riscv_JALR;
 
@@ -246,7 +241,7 @@ assign flush = pc_load;
 
 assign addr_toMAU_en = riscv_LOAD|riscv_STORE;
 assign addr_toMAU = {32{addr_toMAU_en}}&alu_add;
-assign data_toMAU = {32{riscv_STORE}}&alu_op2;
+assign data_toMAU = {32{riscv_STORE}}&data_in2;
 
 
 endmodule

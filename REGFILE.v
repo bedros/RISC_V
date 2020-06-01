@@ -31,9 +31,7 @@ for(i = 1;i<32;i=i+1)begin :_register_reset
       else begin
 			if(rdmau_en == 1'b1)begin
 				if(rdmau == i) begin
-					if(!((rd_en == 1'b1)&&(rd == i)))begin
-						register[i] <= data_mau_in;
-					end
+					register[i] <= data_mau_in;
 				end
 			end
 			if(run_en == 1'b1)begin

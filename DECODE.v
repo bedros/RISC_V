@@ -127,6 +127,7 @@ assign dec_imm = (imm_i & {32{imm_i_en}})
 |(imm_b & {32{imm_b_en}})
 |(imm_u & {32{imm_u_en}})
 |(imm_j & {32{imm_j_en}});
+
 //立即数使能
 assign imm_en    = riscv_LUI|riscv_AUIPC|riscv_JALR|riscv_JAL|riscv_BRANCH|riscv_OPIMM|riscv_STORE|riscv_LOAD|riscv_SYSTEM;
 assign inst      = (imm_en)?ir:32'h00000000;

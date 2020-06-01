@@ -108,6 +108,7 @@ assign load_addr_misaligned = (riscv_LOAD == 1'b1)?misaligned:1'b0;
 assign store_addr_misaligned = (riscv_STORE == 1'b1)?misaligned:1'b0;
 
 //-------------------传输大小设置-------------------------------------------------------\\
+
 wire byte;
 wire half_word;
 wire word;
@@ -129,6 +130,7 @@ assign lhu_buf =  (data_size_buf == 3'b101)?1'b1:1'b0;
 
 
 //-------------------load数据拼接-----------------------------------------------------\\
+
 wire addr_buf_one;
 wire addr_buf_two;
 wire addr_buf_three;
@@ -145,23 +147,24 @@ wire [31:0]word_in;
 wire [31:0]load_data_in;
 
 assign byte_in = 	(HRDATA[7:0]&{8{addr_buf_one}})|
-						(HRDATA[15:8]&{8{addr_buf_two}})|
-						(HRDATA[23:16]&{8{addr_buf_three}})|
-						(HRDATA[31:24]&{8{addr_buf_four}});
+					(HRDATA[15:8]&{8{addr_buf_two}})|
+					(HRDATA[23:16]&{8{addr_buf_three}})|
+					(HRDATA[31:24]&{8{addr_buf_four}});
 assign half_word_in = 	(HRDATA[15:0]&{16{addr_buf_one}})|
-								(HRDATA[31:16]&{16{addr_buf_three}});
+						(HRDATA[31:16]&{16{addr_buf_three}});
 assign word_in = (HRDATA[31:0]&{32{addr_buf_one}});
 
 assign load_data_in = 	({{24{byte_in[7]}},byte_in[7:0]} & {32{byte_buf}})|
-								({{16{half_word_in[15]}},half_word_in[15:0]} & {32{half_word_buf}})|
-								(word_in & {32{word_buf}})|
-								({{24{1'b0}},byte_in[7:0]} & {32{lbu_buf}})|
-								({{16{1'b0}},half_word_in[15:0]} & {32{lhu_buf}});
+						({{16{half_word_in[15]}},half_word_in[15:0]} & {32{half_word_buf}})|
+						(word_in & {32{word_buf}})|
+						({{24{1'b0}},byte_in[7:0]} & {32{lbu_buf}})|
+						({{16{1'b0}},half_word_in[15:0]} & {32{lhu_buf}});
 								
 								
 
 
 //-------------------store数据拼接----------------------------------------------------\\
+
 wire addr_one;
 wire addr_two;
 wire addr_three;
@@ -198,6 +201,7 @@ assign HADDR = (HADDR_outen == 1'b1)?addr_out:32'h00000000;
 
 
 //-------------------读写请求处理----------------------------------------------------\\
+
 always@(posedge clk) begin
 	if(read_flag == 1'b1)begin
 		if(HREADY == 1'b1) begin
@@ -326,7 +330,7 @@ always@(posedge clk,negedge reset)begin
 		data_buf <= 32'h00000000;
 	end
 	else begin
-	if(riscv_STORE)
+	if(riscv_STORE == 1'b1)
 		data_buf <= store_data_out;
 	end
 end
@@ -338,10 +342,9 @@ wire [4:0]rs2;
 assign rs1 = (rs1_en == 1'b1)?dec_rs1:5'b00000;
 assign rs2 = (rs2_en == 1'b1)?dec_rs2:5'b00000;
 
-
 always@(*)begin
 	if(read_flag == 1'b1)begin
-		if((rd_buf == rs1)||(rd_buf == rs2))begin
+		if((rd_buf == rs1)||(rd_buf == rs2)||(rd_buf == rd))begin
 				MAU_data_conflict = 1'b1;
 		end
 		else

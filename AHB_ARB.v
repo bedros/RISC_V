@@ -116,15 +116,29 @@ assign CODE_ACCESS = (CODE_HTRANS == 2'b10)?1'b1:1'b0;
 assign DATA_ACCESS = (DATA_HTRANS == 2'b10)?1'b1:1'b0;
 
 
+//always@(*)begin
+//if(data_conflict_buf == 1'b1)begin
+//	case(DATA_ACCESS_DEVICE_buf)
+//		4'd0:ACCESS_data_conflict = 4'd1;
+//		4'd1: if(HREADY_1 == 1'b1) ACCESS_data_conflict = 4'd0;
+//		4'd2: if(HREADY_2 == 1'b1) ACCESS_data_conflict = 4'd0;
+//		4'd3:ACCESS_data_conflict = 4'd1;
+//		default:ACCESS_data_conflict = 4'd1;
+//	endcase
+//end
+//else begin
+//	if(data_conflict == 1'b1)begin
+//		ACCESS_data_conflict = 1'b1;
+//	end
+//	else begin
+//		ACCESS_data_conflict = 1'b0;
+//	end
+//end
+//end
+
 always@(*)begin
 if(data_conflict_buf == 1'b1)begin
-	case(DATA_ACCESS_DEVICE_buf)
-		4'd0:ACCESS_data_conflict = 4'd1;
-		4'd1: if(HREADY_1 == 1'b1) ACCESS_data_conflict = 4'd0;
-		4'd2: if(HREADY_2 == 1'b1) ACCESS_data_conflict = 4'd0;
-		4'd3:ACCESS_data_conflict = 4'd1;
-		default:ACCESS_data_conflict = 4'd1;
-	endcase
+	ACCESS_data_conflict = data_conflict_buf;
 end
 else begin
 	if(data_conflict == 1'b1)begin
